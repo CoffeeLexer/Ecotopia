@@ -5,5 +5,5 @@ utilities.app.post('/email', async (req, res) => {
     if(!email) return res.json({flag: 'failure', msg: ["no body for 'email'"]})
     let sql = `select * from internal_login where email = '${email}'`
     let result = await utilities.query(sql)
-    res.json({flag: 'success', exists: result.length !== 0})
+    res.json({flag: 'success', exists: result.result.length !== 0})
 })
