@@ -47,6 +47,6 @@ app.all(/.*/, (req, res) => {
     })
 })
 
-app.listen(settings.server.port, settings.server.host, () => {
-    console.log(`Server running on: ${settings.server.host}:${settings.server.port}`)
+app.listen(settings.server.port, () => {
+    console.log(`Server running on: localhost:${settings.server.port}`)
 })
