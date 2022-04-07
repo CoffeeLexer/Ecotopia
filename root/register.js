@@ -19,12 +19,12 @@ utilities.app.post('/register', async (req, res) => {
     let response = await utilities.query(sql)
     if(!response.result) return res.json({flag: 'failure', msg: ['email in use by other user']})
 
-    response = await utilities.query(`insert into account(green.account.fk_internal_login) value ('${response.result[0].insertId}')`)
+    response = await utilities.query(`insert into account(green.account.fk_internal_login) value ('${response.result.insertId}')`)
 
     while(true) {
         let cookie = utilities.generate_random_sha512()
         sql = ` insert into cookies(cookie, mac, fk_account)
-                    value ('${cookie}', '${mac}', '${response.result[0].insertId}')`
+                    value ('${cookie}', '${mac}', '${response.result.insertId}')`
         response = await utilities.query(sql)
         if(response.result !== undefined) return res.json({flag: 'success', cookie: cookie})
     }
