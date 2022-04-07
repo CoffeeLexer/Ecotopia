@@ -26,15 +26,15 @@ db_connection.connect((err) => {
     if(err) throw err
     console.log("Database connected")
 })
-
-let utilities = require('./utilities')
-utilities.query = async function query(sql) {
+let scripts = require('./scripts')
+scripts.query = async function query(sql) {
     return new Promise((resolve, reject) => {
         db_connection.query(sql, (error, result) => {
             resolve({result: result, error: error})
         })
     })
 }
+let utilities = require('./utilities')
 utilities.app = app
 
 require('./root/_')

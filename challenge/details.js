@@ -3,14 +3,12 @@ const utilities = require('../utilities')
 utilities.app.post('/challenge/details', async (req, res) => {
     let test = utilities.field_test(req.body, ['cookie', 'challengeId'])
     if(test.flag === "failure") return res.json(test)
-    let sql = `select * from account where cookie = '${req.body.cookie}'`
+    let account = utilities.account_find(req.body.cookie)
+    if(account.flag === "failure") return res.json({flag: 'failure', msg: ['account with current cookie not found']})
+    let sql = `select description, difficulty from challenge where id = '${req.body.challengeId}'`
     let response = await utilities.query(sql)
-    if(response.result.length !== 1) return res.json({flag: 'failure', msg: ['account with current cookie not found']})
-    // 'cookie', 'description', 'maxPeople', 'recommendedPeople', 'pollutionTags', 'tools'
-    sql = `select recommended_people_amount as recommendedPeople, max_people_amount as maxPeople, description from challenge where id = '${req.body.challengeId}'`
-    response = await utilities.query(sql)
     let challenge = response.result
-    if(challenge === undefined) return res.json({flag: 'failure', msg: ['no challenge by id']})
+    if(challenge.length === 0) return res.json({flag: 'failure', msg: ['no challenge by id']})
     sql = `select fk_tag from tag_list where fk_challenge = '${req.body.challengeId}'`
     response = await utilities.query(sql)
     let tags = []
