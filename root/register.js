@@ -26,6 +26,6 @@ utilities.app.post('/register', async (req, res) => {
         sql = ` insert into cookies(cookie, mac, fk_account)
                     value ('${cookie}', '${mac}', '${response.result.insertId}')`
         response = await utilities.query(sql)
-        if(response.result) return res.json({flag: 'success', cookie: cookie})
+        if(response.result !== undefined) return res.json({flag: 'success', cookie: cookie})
     }
 })
