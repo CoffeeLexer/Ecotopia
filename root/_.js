@@ -1,4 +1,6 @@
 require('./email')
 require('./register')
 require('./login')
+require('./logout')
 require('./tags')
+require('./profile')
