@@ -37,7 +37,7 @@ function handleDisconnect() {
 
     db_con.on(`error`, (error) => {
         console.log(`db error: ${error}`);
-        if(error.code === 'PROTOCOL_CONNECTION_LOST') {
+        if(error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ECONNRESET') {
             handleDisconnect();
         }
         else {
