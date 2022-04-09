@@ -17,5 +17,5 @@ utilities.app.post('/challenge/create', async (req, res) => {
         sql = `insert into tag_list(fk_challenge, fk_tag) value ('${challenge_id}', '${req.body.pollutionTags[i]}')`
         response = await utilities.query(sql)
     }
-    res.json({flag: "success"})
+    return res.json({flag: "success"})
 })

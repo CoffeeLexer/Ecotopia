@@ -16,24 +16,46 @@ app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-
 
 const mysql = require("mysql")
 const {response} = require("express");
-const db_connection = mysql.createConnection({
-    host: settings.database.host,
-    user: settings.database.user[user_index].user,
-    password: settings.database.user[user_index].password,
-    database: settings.database.database
-})
-db_connection.connect((err) => {
-    if(err) throw err
-    console.log("Database connected")
-})
 let scripts = require('./scripts')
-scripts.query = async function query(sql) {
-    return new Promise((resolve, reject) => {
-        db_connection.query(sql, (error, result) => {
-            resolve({result: result, error: error})
-        })
+
+let db_con = undefined
+
+function handleDisconnect() {
+    db_con = mysql.createConnection({
+        host: settings.database.host,
+        user: settings.database.user[user_index].user,
+        password: settings.database.user[user_index].password,
+        database: settings.database.database
     })
+
+    db_con.connect((error) => {
+        if(error) {
+            console.log(`error when connecting to db: ${error}`);
+            setTimeout(handleDisconnect, 2000);
+        }
+    });
+
+    db_con.on(`error`, (error) => {
+        console.log(`db error: ${error}`);
+        if(error.code === 'PROTOCOL_CONNECTION_LOST') {
+            handleDisconnect();
+        }
+        else {
+            throw error;
+        }
+    })
+
+    scripts.query = async function (sql) {
+        return new Promise((resolve, reject) => {
+            db_con.query(sql, (error, result) => {
+                resolve({result: result, error: error})
+            })
+        })
+    }
 }
+
+handleDisconnect();
+
 let utilities = require('./utilities')
 utilities.app = app
 
@@ -50,3 +72,4 @@ app.all(/.*/, (req, res) => {
 app.listen(settings.server.port, () => {
     console.log(`Server running on: localhost:${settings.server.port}`)
 })
+
