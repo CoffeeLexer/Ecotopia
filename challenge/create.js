@@ -1,12 +1,12 @@
 const utilities = require('../utilities')
 
 utilities.app.post('/challenge/create', async (req, res) => {
-    let test = utilities.field_test(req.body, ['cookie', 'description', 'pollutionTags', 'tools', 'difficulty'])
+    let test = utilities.field_test(req.body, ['cookie', 'description', 'pollutionTags', 'tools', 'difficulty', 'name'])
     if(test.flag === "failure") return res.json(test)
     let account = await utilities.account_find(req.body.cookie)
     if(account.flag === "failure") return res.json({flag: 'failure', msg: ['account with current cookie not found']})
-    let sql = ` insert into challenge (fk_account, description, difficulty) 
-            value ('${account.id}', '${req.body.description}', '${req.body.difficulty}')`
+    let sql = ` insert into challenge (fk_account, description, difficulty, name) 
+            value ('${account.id}', '${req.body.description}', '${req.body.difficulty}', '${req.body.name}')`
     let response = await utilities.query(sql)
     let challenge_id = response.result.insertId
     for(let i in req.body.tools) {

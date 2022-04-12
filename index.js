@@ -3,24 +3,16 @@ const settings = require('./settings.json')
 
 const express = require('express')
 const app = express()
-const bodyParser = require('body-parser')
-const multer = require('multer')
-const upload = multer()
-app.use(bodyParser.json({
-    verify: (req, res, buf) => {
-        req.rawBody = buf
-    }
-}))
-app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 const mysql = require("mysql")
-const {response} = require("express");
 let scripts = require('./scripts')
 
 let db_con = undefined
 
-function handleDisconnect() {
+function connectDatabase() {
     db_con = mysql.createConnection({
         host: settings.database.host,
         user: settings.database.user[user_index].user,
@@ -31,14 +23,14 @@ function handleDisconnect() {
     db_con.connect((error) => {
         if(error) {
             console.log(`error when connecting to db: ${error}`);
-            setTimeout(handleDisconnect, 2000);
+            setTimeout(connectDatabase, 2000);
         }
     });
 
     db_con.on(`error`, (error) => {
         console.log(`db error: ${error}`);
         if(error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ECONNRESET') {
-            handleDisconnect();
+            connectDatabase();
         }
         else {
             throw error;
@@ -54,7 +46,7 @@ function handleDisconnect() {
     }
 }
 
-handleDisconnect();
+connectDatabase();
 
 let utilities = require('./utilities')
 utilities.app = app
