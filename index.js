@@ -1,11 +1,12 @@
-const user_index = 1
 const settings = require('./settings.json')
 
 const express = require('express')
 const app = express()
+const cookie_parser = require('cookie-parser')
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(cookie_parser())
 
 const mysql = require("mysql")
 let scripts = require('./scripts')
@@ -13,12 +14,7 @@ let scripts = require('./scripts')
 let db_con = undefined
 
 function connectDatabase() {
-    db_con = mysql.createConnection({
-        host: settings.database.host,
-        user: settings.database.user[user_index].user,
-        password: settings.database.user[user_index].password,
-        database: settings.database.database
-    })
+    db_con = mysql.createConnection(settings.database)
 
     db_con.connect((error) => {
         if(error) {
@@ -36,7 +32,6 @@ function connectDatabase() {
             throw error;
         }
     })
-
     scripts.query = async function (sql) {
         return new Promise((resolve, reject) => {
             db_con.query(sql, (error, result) => {
@@ -48,20 +43,28 @@ function connectDatabase() {
 
 connectDatabase();
 
-let utilities = require('./utilities')
-utilities.app = app
+const utilities = require('./utilities')
 
-require('./root/_')
-require('./challenge/_')
+async function authenticate(req, res, next) {
+    let key = req.cookies.key
+    if(key === undefined) return res.status(401).send('You are not logged in! (No key)')
+    let response = await utilities.query(`select * from cookies where cookie = '${key}'`)
+    if(response.error) throw response.error
+    if(response.result.length === 0) return res.clearCookie('key').status(401).send('You are not logged in!')
+    res.locals.account_id = response.result[0].fk_account
+    next()
+}
+
+app.all(/\/challenge\/.*/, authenticate)
+app.all('/public/profile', authenticate)
+
+app.use('/public', require('./route/public'))
+app.use('/challenge', require('./route/challenge'))
 
 app.all(/.*/, (req, res) => {
-    res.json({
-        flag: "failure",
-        msg: ["error 404"]
-    })
+    res.status(404).send('Route not found!')
 })
 
 app.listen(settings.server.port, () => {
     console.log(`Server running on: localhost:${settings.server.port}`)
 })
-

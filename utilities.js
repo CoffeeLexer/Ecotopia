@@ -4,15 +4,23 @@ const pepper = require('./settings.json').misc.pepper
 
 module.exports = {
     field_test,
-    query,// index.js
-    app: {},
+    query,
     account_find,
     account_exists,
+    structure_test,
     generate_random_sha512,
     hash_password
 }
 async function query(sql) {
     return scripts.query(sql)
+}
+function structure_test(structure, fields) {
+    let bad_fields = []
+    fields.forEach(element => {
+        let param = structure[element]
+        if(param === undefined) bad_fields.push(element)
+    })
+    return bad_fields.join(', ')
 }
 function field_test(structure, fields) {
     let msg = []
