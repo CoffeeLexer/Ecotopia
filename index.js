@@ -55,8 +55,8 @@ async function authenticate(req, res, next) {
     next()
 }
 
-app.all(/\/challenge\/.*/, authenticate)
-app.all('/public/profile', authenticate)
+app.post(/\/challenge\/.*/, authenticate)
+app.post('/public/profile', authenticate)
 
 app.use('/public', require('./route/public'))
 app.use('/challenge', require('./route/challenge'))

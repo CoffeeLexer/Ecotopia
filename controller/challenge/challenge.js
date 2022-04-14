@@ -1,7 +1,8 @@
 const utilities = require("../../utilities");
 
 async function create(req, res, next) {
-    let test = utilities.structure_test(req.body, ['description', 'name', 'difficulty', 'pollutionTags'])
+    let test = utilities.structure_test(req.body, ['name', 'difficulty', 'pollutionTags'])
+    if(req.body.description === undefined) req.body.description = ""
     if(test) return res.status(400).send(`No body for ${test}!`)
     let response = await utilities.query(`insert into challenge (fk_account, name, description, difficulty) value ('${res.locals.account_id}', '${req.body.name}', '${req.body.description}', '${req.body.difficulty}')`)
     if(response.error) throw response.error
@@ -38,7 +39,7 @@ async function edit(req, res, next) {
         if(response.error) throw response.error
     }
     req.body.challengeId = req.body.id
-    await details(req, res, next)
+    return await details(req, res, next)
 }
 async function feed(req, res, next) {
     let test = utilities.structure_test(req.body, ['page', 'limit'])
@@ -47,7 +48,7 @@ async function feed(req, res, next) {
     if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
     let response = await utilities.query(`select id, difficulty, submitted_on as postDate, name from challenge limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     if(response.error) throw response.error
-    res.status(200).json(response.result)
+    return res.status(200).json(response.result)
 }
 
 module.exports = {
