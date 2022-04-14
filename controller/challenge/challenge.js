@@ -46,7 +46,7 @@ async function feed(req, res, next) {
     if(test) return res.status(400).send(`No body for ${test}!`)
     if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
     if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
-    let response = await utilities.query(`select id, difficulty, submitted_on as postDate, name from challenge limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
+    let response = await utilities.query(`select id, difficulty, submitted_on as postDate, name from challenge order by postDate desc limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     if(response.error) throw response.error
     return res.status(200).json(response.result)
 }
