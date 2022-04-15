@@ -52,7 +52,7 @@ async function authenticate(req, res, next) {
     if(response.error) throw response.error
     if(response.result.length === 0) return res.clearCookie('key').status(401).send('You are not logged in!')
     res.locals.account_id = response.result[0].fk_account
-    next()
+    return next()
 }
 
 app.post(/\/challenge\/.*/, authenticate)
@@ -62,7 +62,7 @@ app.use('/public', require('./route/public'))
 app.use('/challenge', require('./route/challenge'))
 
 app.all(/.*/, (req, res) => {
-    res.status(404).send('Route not found!')
+    return res.status(404).send('Route not found!')
 })
 
 app.listen(settings.server.port, () => {

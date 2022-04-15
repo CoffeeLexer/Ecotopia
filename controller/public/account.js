@@ -24,7 +24,7 @@ async function register(req, res, next) {
     }
     while(response.error)
     res.cookie('key', cookie)
-    res.status(200).send('Account created!')
+    return res.status(200).send('Account created!')
 }
 async function login(req, res, next) {
     let test = utilities.structure_test(req.body, ['email', 'password'])
@@ -45,7 +45,7 @@ async function login(req, res, next) {
     }
     while(response.error)
     res.cookie('key', cookie)
-    res.status(200).send('Account logged in!')
+    return res.status(200).send('Account logged in!')
 }
 async function logout(req, res, next) {
     let key = req.cookies.key
@@ -54,7 +54,7 @@ async function logout(req, res, next) {
     if(response.error) throw response.error
     res.clearCookie('key')
     if(response.result.affectedRows === 0) return res.status(401).send('You are not logged in!')
-    res.status(200).send('Account logged out!')
+    return res.status(200).send('Account logged out!')
 }
 async function profile(req, res, next) {
     let id = req.body.id !== undefined ? req.body.id : res.locals.account_id
