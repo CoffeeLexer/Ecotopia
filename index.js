@@ -25,7 +25,7 @@ function connectDatabase() {
 
     db_con.on(`error`, (error) => {
         console.log(`db error: ${error}`);
-        if(error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ECONNRESET') {
+        if(error.code === 'ECONNRESET') {
             connectDatabase();
         }
         else {
@@ -58,8 +58,10 @@ async function authenticate(req, res, next) {
 app.post(/\/challenge\/.*/, authenticate)
 app.post('/public/profile', authenticate)
 
-app.use('/public', require('./route/public'))
-app.use('/challenge', require('./route/challenge'))
+const publicRoute = require('./route/public')
+app.use('/public', publicRoute)
+const challengeRoute = require('./route/challenge')
+app.use('/challenge', challengeRoute)
 
 app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')

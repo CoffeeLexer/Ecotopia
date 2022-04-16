@@ -9,7 +9,8 @@ module.exports = {
     account_exists,
     structure_test,
     generate_random_sha512,
-    hash_password
+    hash_password,
+    app: {}
 }
 async function query(sql) {
     return scripts.query(sql)
