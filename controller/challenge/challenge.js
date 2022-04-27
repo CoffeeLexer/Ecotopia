@@ -50,6 +50,24 @@ async function feed(req, res, next) {
     if(response.error) throw response.error
     return res.status(200).json(response.result)
 }
+async function list(req, res, next) {
+    let test = utilities.structure_test(req.body, ['page', 'limit'])
+    if(test) return res.status(400).send(`No body for ${test}!`)
+    if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
+    if(res.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
+    let response = await utilities.query(
+    `select ch.id, difficulty, submitted_on as postDate, description, ch.name, il.lastname, il.firstname, group_concat(_tag.name separator ';')
+        from challenge as ch
+        left join account a on a.id = ch.fk_account
+        left join internal_login il on il.id = a.fk_internal_login
+        left join location loc on loc.id = ch.fk_location
+        left join tag_list tl on ch.id = tl.fk_challenge
+        left join tag _tag on tl.fk_tag = _tag.id
+        group by ch.id
+        limit '${req.body.limit}' offset '${(req.body.page - 1) * req.body.limit}'`)
+    if(response.error) throw response.error
+    return res.status(200).json(response.result)
+}
 
 module.exports = {
     create,

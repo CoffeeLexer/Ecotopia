@@ -25,7 +25,7 @@ function connectDatabase() {
 
     db_con.on(`error`, (error) => {
         console.log(`db error: ${error}`);
-        if(error.code === 'ECONNRESET') {
+        if(error.code === "PROTOCOL_CONNECTION_LOST" || error.code === "ECONNRESET") {
             connectDatabase();
         }
         else {
