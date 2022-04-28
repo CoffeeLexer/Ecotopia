@@ -26,6 +26,7 @@ function connectDatabase() {
     db_con.on(`error`, (error) => {
         console.log(`db error: ${error}`);
         if(error.code === "PROTOCOL_CONNECTION_LOST" || error.code === "ECONNRESET") {
+            console.log(`Connection lost. Reestablishing connection(${error.code}).`)
             connectDatabase();
         }
         else {
@@ -40,8 +41,11 @@ function connectDatabase() {
         })
     }
 }
-
 connectDatabase();
+
+async function hearth_beat() {
+
+}
 
 const utilities = require('./utilities')
 
