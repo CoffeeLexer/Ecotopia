@@ -11,18 +11,8 @@ async function create(req, res, next) {
         response = await utilities.query(`insert into tag_list(fk_challenge, fk_tag) value ('${challenge_id}', '${req.body.pollutionTags[i]}')`)
         if(response.error) throw response.error
     }
-    res.status(200).send(`${challenge_id}`)
-}
-async function details(req, res, next) {
-    let test = utilities.structure_test(req.body, ['challengeId'])
-    if(test) return res.status(400).send(`No body for ${test}!`)
-    let response = await utilities.query(`select fk_account, id, name, description, difficulty from challenge where id = '${req.body.challengeId}'`)
-    if(response.error) throw response.error
-    if(response.result.length === 0) return res.status(404).send('Challenge not found!')
-    let challenge = response.result[0]
-    response = await utilities.query(`select fk_tag from tag_list where fk_challenge = '${req.body.challengeId}'`)
-    if(response.error) throw response.error
-    return res.status(200).json(Object.assign(challenge, {pollutionTags: response.result.map(e => e.fk_tag)}))
+    req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + challenge_id
+    return await list(req, res, next)
 }
 async function edit(req, res, next) {
     let test = utilities.structure_test(req.body, ['id', 'description', 'pollutionTags', 'difficulty', 'name'])
@@ -38,40 +28,61 @@ async function edit(req, res, next) {
         response = await utilities.query(`insert into tag_list(fk_challenge, fk_tag) value ('${req.body.id}', '${req.body.pollutionTags[i]}')`)
         if(response.error) throw response.error
     }
-    req.body.challengeId = req.body.id
-    return await details(req, res, next)
-}
-async function feed(req, res, next) {
-    let test = utilities.structure_test(req.body, ['page', 'limit'])
-    if(test) return res.status(400).send(`No body for ${test}!`)
-    if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
-    if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
-    let response = await utilities.query(`select id, difficulty, submitted_on as postDate, name from challenge order by postDate desc limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
-    if(response.error) throw response.error
-    return res.status(200).json(response.result)
+    req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + challenge_id
+    return await list(req, res, next)
 }
 async function list(req, res, next) {
-    let test = utilities.structure_test(req.body, ['page', 'limit'])
-    if(test) return res.status(400).send(`No body for ${test}!`)
-    if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
-    if(res.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
-    let response = await utilities.query(
-    `select ch.id, difficulty, submitted_on as postDate, description, ch.name, il.lastname, il.firstname, group_concat(_tag.name separator ';')
-        from challenge as ch
-        left join account a on a.id = ch.fk_account
-        left join internal_login il on il.id = a.fk_internal_login
-        left join location loc on loc.id = ch.fk_location
-        left join tag_list tl on ch.id = tl.fk_challenge
-        left join tag _tag on tl.fk_tag = _tag.id
-        group by ch.id
-        limit '${req.body.limit}' offset '${(req.body.page - 1) * req.body.limit}'`)
+    let id = req.url.substring(req.url.lastIndexOf('/') + 1)
+    let postfix = ''
+    if(!isNaN(id)) {
+        postfix = `where a.id = '${id}' group by a.id`
+    }
+    else {
+        let test = utilities.structure_test(req.body, ['page', 'limit'])
+        if(test) return res.status(400).send(`No body for ${test}!`)
+        if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
+        if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
+        postfix = `group by a.id limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`
+    }
+    let response = await utilities.query(`
+    select a.* , group_concat(challenge_image.id) as images
+    from (
+        select a.*, group_concat(meeting.id) as meetings
+        from (
+            select challenge.id           as id,
+            challenge.name         as name,
+            challenge.difficulty   as difficulty,
+            challenge.submitted_on as postDate,
+            group_concat(tag.name) as pollutionTags,
+            location.latitude,
+            location.longitude
+            from challenge
+            left join account on challenge.fk_account = account.id
+            left join internal_login on account.fk_internal_login = internal_login.id
+            left join location on location.id = challenge.fk_location
+            left join tag_list on challenge.id = tag_list.fk_challenge
+            left join tag on tag_list.fk_tag = tag.id
+            group by id
+        ) as a
+        left join meeting on a.id = meeting.fk_challenge
+        group by a.id
+    ) as a
+    left join challenge_image on a.id = challenge_image.fk_challenge
+    ${postfix}
+    `)
     if(response.error) throw response.error
+    response.result.forEach(e => {
+        if(e.images) e.images = e.images.split(',')
+        if(e.meetings) e.meetings = e.meetings.split(',')
+    })
+    if(!isNaN(id)) {
+        response.result = response.result[0]
+    }
     return res.status(200).json(response.result)
 }
 
 module.exports = {
     create,
-    details,
     edit,
-    feed
+    list
 }

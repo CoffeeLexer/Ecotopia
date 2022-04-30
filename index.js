@@ -43,11 +43,14 @@ function connectDatabase() {
 }
 connectDatabase();
 
-async function hearth_beat() {
+const utilities = require('./utilities')
 
+async function heartbeat() {
+    await utilities.query('select 1')
+    console.log(`${utilities.now()}: heartbeat`)
+    setTimeout(heartbeat, 1000)
 }
 
-const utilities = require('./utilities')
 
 async function authenticate(req, res, next) {
     let key = req.cookies.key
@@ -61,11 +64,13 @@ async function authenticate(req, res, next) {
 
 app.post(/\/challenge\/.*/, authenticate)
 app.post('/public/profile', authenticate)
+app.post('/meeting/create', authenticate)
+app.post('/meeting/join', authenticate)
+app.post('/meeting/leave', authenticate)
 
-const publicRoute = require('./route/public')
-app.use('/public', publicRoute)
-const challengeRoute = require('./route/challenge')
-app.use('/challenge', challengeRoute)
+app.use('/public', require('./route/public'))
+app.use('/challenge', require('./route/challenge'))
+app.use('/meeting', require('./route/meeting'))
 
 app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')

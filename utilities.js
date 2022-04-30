@@ -1,6 +1,7 @@
 const scripts = require('./scripts')
 const crypto = require('crypto')
 const pepper = require('./settings.json').misc.pepper
+const fs = require('fs')
 
 module.exports = {
     field_test,
@@ -10,7 +11,29 @@ module.exports = {
     structure_test,
     generate_random_sha512,
     hash_password,
-    app: {}
+    app: {},
+    now,
+    log
+}
+function log() {
+    
+}
+function now() {
+    const d = new Date()
+    const year = d.getFullYear()
+    let month = d.getMonth() + 1
+    month = month.toString().padStart(2, '0')
+    let date = d.getDate()
+    date = date.toString().padStart(2, '0')
+    let hour = d.getHours()
+    hour = hour.toString().padStart(2, '0')
+    let minutes = d.getMinutes()
+    minutes = minutes.toString().padStart(2, '0')
+    let seconds = d.getSeconds()
+    seconds = seconds.toString().padStart(2, '0')
+    let milliseconds = d.getMilliseconds()
+    milliseconds = milliseconds.toString().padStart(3, '0')
+    return `${year}-${month}-${date} ${hour}:${minutes}:${seconds}:${milliseconds}`
 }
 async function query(sql) {
     return scripts.query(sql)
