@@ -1,7 +1,7 @@
 const utilities = require("../../utilities");
 
 async function create(req, res, next) {
-    let test = utilities.structure_test(req.body, ['name', 'difficulty', 'pollutionTags'])
+    let test = utilities.structure_test(req.body, ['name', 'difficulty', 'pollutionTags', 'latitude', 'longitude'])
     if(req.body.description === undefined) req.body.description = ""
     if(test) return res.status(400).send(`No body for ${test}!`)
     let response = await utilities.query(`insert into challenge (fk_account, name, description, difficulty) value ('${res.locals.account_id}', '${req.body.name}', '${req.body.description}', '${req.body.difficulty}')`)
@@ -11,6 +11,8 @@ async function create(req, res, next) {
         response = await utilities.query(`insert into tag_list(fk_challenge, fk_tag) value ('${challenge_id}', '${req.body.pollutionTags[i]}')`)
         if(response.error) throw response.error
     }
+    response = await utilities.query(`insert into location(fk_challenge, longitude, latitude) value ('${challenge_id}', '${req.body.latitude}', '${req.body.longitude}')`)
+    if(response.error) throw response.error
     req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + challenge_id
     return await list(req, res, next)
 }
@@ -59,7 +61,7 @@ async function list(req, res, next) {
             from challenge
             left join account on challenge.fk_account = account.id
             left join internal_login on account.fk_internal_login = internal_login.id
-            left join location on location.id = challenge.fk_location
+            left join location on location.fk_challenge = challenge.id
             left join tag_list on challenge.id = tag_list.fk_challenge
             left join tag on tag_list.fk_tag = tag.id
             group by id
