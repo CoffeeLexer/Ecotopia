@@ -7,7 +7,7 @@ async function get(req, res, next) {
     if(response.error) throw response.error
     if(response.result.length === 0) return res.status(404).send(`Image not found!`)
     let img = Buffer.from(response.result[0].data.toString('binary'), 'base64');
-    res.set('Content-Type', 'image/png')
+    res.set('Content-Type', response.result[0].type)
     res.status(200).send(img)
 }
 async function upload(req, res, next) {
