@@ -78,6 +78,7 @@ app.post('/public/profile', authenticate)
 app.post('/meeting/create', authenticate)
 app.post('/meeting/join', authenticate)
 app.post('/meeting/leave', authenticate)
+app.post('/profile', authenticate)
 
 app.use('/public', require('./route/public'))
 app.use('/profile', require('./route/profile'))

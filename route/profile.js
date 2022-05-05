@@ -5,5 +5,6 @@ const router = express.Router()
 
 router.post('/list', c_profile.list)
 router.post(/\/list\/\d+/, c_profile.list)
+router.post('', c_profile.profile)
 
 module.exports = router;

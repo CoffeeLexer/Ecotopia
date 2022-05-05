@@ -20,7 +20,13 @@ async function list(req, res, next) {
     }
     return res.status(200).json(response.result)
 }
+async function profile(req, res, next) {
+    let response = await utilities.query(`select * from profile where id = '${res.locals.account_id}'`)
+    if(response.error) throw response.error
+    return res.status(200).send(response.result[0])
+}
 
 module.exports = {
-    list
+    list,
+    profile
 }
