@@ -53,6 +53,7 @@ async function list(req, res, next) {
         from (
             select challenge.id           as id,
             account.id as authorId,
+            challenge.description as comment,
             challenge.name         as name,
             challenge.difficulty   as difficulty,
             challenge.submitted_on as postDate,
