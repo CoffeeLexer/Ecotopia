@@ -62,6 +62,17 @@ async function authenticate(req, res, next) {
     return next()
 }
 
+function test_1(req, res, next) {
+    console.log(`Test 1: ${req.url}`)
+    next()
+}
+function test_2(req, res, next) {
+    console.log(`Test 2: ${req.url}`)
+    next()
+}
+
+app.get('/test', test_1, test_2)
+
 app.post(/\/challenge\/.*/, authenticate)
 app.post('/public/profile', authenticate)
 app.post('/meeting/create', authenticate)

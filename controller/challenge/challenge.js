@@ -52,6 +52,7 @@ async function list(req, res, next) {
         select a.*, group_concat(meeting.id) as meetings
         from (
             select challenge.id           as id,
+            account.id as authorId,
             challenge.name         as name,
             challenge.difficulty   as difficulty,
             challenge.submitted_on as postDate,
