@@ -80,6 +80,7 @@ app.post('/meeting/join', authenticate)
 app.post('/meeting/leave', authenticate)
 
 app.use('/public', require('./route/public'))
+app.use('/profile', require('./route/profile'))
 app.use('/challenge', require('./route/challenge'))
 app.use('/meeting', require('./route/meeting'))
 
