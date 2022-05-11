@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Meeting chat</title>
+</head>
+<body>
+<ul id="messages"></ul>
+<h1>All work is done in console!</h1>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io('/meeting/chat');
+    socket.on('user_joined',(data) => {
+        console.log(data)
+    })
+    socket.on('user_left',(data) => {
+        console.log(data)
+    })
+    socket.on('message',(data) => {
+        console.log(data)
+    })
+</script>
+</body>
+</html>

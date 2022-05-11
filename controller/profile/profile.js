@@ -1,4 +1,5 @@
 const utilities = require('../../utilities')
+const fs = require("fs");
 
 async function list(req, res, next) {
     let id = req.url.substring(req.url.lastIndexOf('/') + 1)
@@ -25,8 +26,31 @@ async function profile(req, res, next) {
     if(response.error) throw response.error
     return res.status(200).send(response.result[0])
 }
+async function setProfilePicture(req, res, next) {
+    let files = req.files
+    if(files.length !== 1) return res.status(400).send(`One image to set (got ${files.length})!`)
+    let buffer = fs.readFileSync(files[0].path);
+    let data = buffer.toString('base64')
+    console.log(res.locals.account_id)
+    let response = await utilities.query(`update account set profile_pic = '${data}', profile_pic_mime = '${files[0].mimetype}' where id = '${res.locals.account_id}'`)
+    if(response.error) throw response.error
+    fs.rm(files[0].path, {}, (err) => {if(err) throw err})
+    res.send(`Done`)
+}
+async function getPicture(req, res, next) {
+    req.url = req.url.substring(0, req.url.lastIndexOf('/picture'))
+    let id = req.url.substring(req.url.lastIndexOf('/') + 1)
+    let response = await utilities.query(`select profile_pic, profile_pic_mime from account where id = '${id}'`)
+    if(response.error) throw response.error
+    if(response.result.length !== 1) return res.status(404).send('Account not found!')
+    let img = Buffer.from(response.result[0].profile_pic.toString('binary'), 'base64');
+    res.set('Content-Type', response.result[0].profile_pic_mime)
+    res.send(img)
+}
 
 module.exports = {
     list,
-    profile
+    profile,
+    setProfilePicture,
+    getPicture
 }
