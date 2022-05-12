@@ -11,7 +11,7 @@ async function create(req, res, next) {
         response = await utilities.query(`insert into tag_list(fk_challenge, fk_tag) value ('${challenge_id}', '${req.body.pollutionTags[i]}')`)
         if(response.error) throw response.error
     }
-    response = await utilities.query(`insert into location(fk_challenge, longitude, latitude) value ('${challenge_id}', '${req.body.latitude}', '${req.body.longitude}')`)
+    response = await utilities.query(`insert into location(fk_challenge, longitude, latitude) value ('${challenge_id}', '${req.body.longitude}', '${req.body.latitude}')`)
     if(response.error) throw response.error
     req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + challenge_id
     return await list(req, res, next)
@@ -30,7 +30,7 @@ async function edit(req, res, next) {
         response = await utilities.query(`insert into tag_list(fk_challenge, fk_tag) value ('${req.body.id}', '${req.body.pollutionTags[i]}')`)
         if(response.error) throw response.error
     }
-    req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + challenge_id
+    req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + req.body.id
     return await list(req, res, next)
 }
 async function list(req, res, next) {
