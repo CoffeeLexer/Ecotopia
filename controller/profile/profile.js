@@ -31,7 +31,6 @@ async function setProfilePicture(req, res, next) {
     if(files.length !== 1) return res.status(400).send(`One image to set (got ${files.length})!`)
     let buffer = fs.readFileSync(files[0].path);
     let data = buffer.toString('base64')
-    console.log(res.locals.account_id)
     let response = await utilities.query(`update account set profile_pic = '${data}', profile_pic_mime = '${files[0].mimetype}' where id = '${res.locals.account_id}'`)
     if(response.error) throw response.error
     fs.rm(files[0].path, {}, (err) => {if(err) throw err})
@@ -42,7 +41,6 @@ async function setProfileBanner(req, res, next) {
     if(files.length !== 1) return res.status(400).send(`One image to set (got ${files.length})!`)
     let buffer = fs.readFileSync(files[0].path);
     let data = buffer.toString('base64')
-    console.log(res.locals.account_id)
     let response = await utilities.query(`update account set banner_pic = '${data}', banner_pic_mime = '${files[0].mimetype}' where id = '${res.locals.account_id}'`)
     if(response.error) throw response.error
     fs.rm(files[0].path, {}, (err) => {if(err) throw err})
