@@ -158,17 +158,6 @@ async function authenticate(req, res, next) {
     return next()
 }
 
-function test_1(req, res, next) {
-    console.log(`Test 1: ${req.url}`)
-    next()
-}
-function test_2(req, res, next) {
-    console.log(`Test 2: ${req.url}`)
-    next()
-}
-
-app.get('/test', test_1, test_2)
-
 app.post(/\/challenge\/.*/, authenticate)
 app.post('/public/profile', authenticate)
 app.post('/meeting/create', authenticate)
@@ -180,6 +169,7 @@ app.use('/public', require('./route/public'))
 app.use('/profile', require('./route/profile'))
 app.use('/challenge', require('./route/challenge'))
 app.use('/meeting', require('./route/meeting'))
+app.use('/bookmark', require('./route/bookmark'))
 
 app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')

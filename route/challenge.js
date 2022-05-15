@@ -3,6 +3,8 @@ const multer  = require('multer')
 const upload = multer({ dest: 'temporary/' })
 const c_challenge = require('../controller/challenge/challenge')
 const c_image = require('../controller/challenge/image')
+const c_watchlist = require('../controller/challenge/bookmark')
+const masterR = require('../masterRoutes')
 
 const router = express.Router()
 
