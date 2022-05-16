@@ -43,7 +43,7 @@ async function list(req, res, next) {
             from challenge
                      left join account on challenge.fk_account = account.id
                      left join internal_login on account.fk_internal_login = internal_login.id
-                     left join location on location.id = challenge.fk_location
+                     left join location on location.fk_challenge = challenge.id
                      left join tag_list on challenge.id = tag_list.fk_challenge
                      left join tag on tag_list.fk_tag = tag.id
             group by challenge.id
