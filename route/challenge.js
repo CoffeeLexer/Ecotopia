@@ -10,6 +10,7 @@ const router = express.Router()
 
 router.post('/create', c_challenge.create)
 router.post(/\/list\/\d+/, c_challenge.list)
+router.post(/\/delete\/\d+/, c_challenge.drop)
 router.post('/list', c_challenge.list)
 router.post('/edit', c_challenge.edit)
 router.get(/\/image\/\d+/, c_image.get)

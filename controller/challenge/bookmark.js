@@ -31,17 +31,9 @@ async function add(req, res, next) {
     }
     return res.status(200).send(`Done!`)
 }
-async function drop(req, res, next) {
-    let segments = req.url.split('/')
-    let response = await utilities.query(`delete from challenge where id = '${segments[2]}'`)
-    if(response.error) throw response.error
-    if(response.result.affectedRows === 0) return res.status(404).send('Challenge not found!')
-    return res.status(200).send(`Challenge deleted!`)
-}
 module.exports = {
     get,
     getAll,
     remove,
-    add,
-    drop
+    add
 }
