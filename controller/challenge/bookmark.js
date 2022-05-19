@@ -7,7 +7,18 @@ async function get(req, res, next) {
     return res.send(true)
 }
 async function getAll(req, res, next) {
-    let response = await utilities.query(`select c.* from bookmark left join challenge c on bookmark.fk_challenge = c.id where bookmark.fk_account = '${res.locals.account_id}'`)
+    let postfix = ``
+    if(req.body.page || req.body.limit) {
+        if(req.body.page && req.body.limit) {
+            if(req.body.page < 1) return res.status(401).send(`Page starts at 1`)
+            if(req.body.limit < 1) return res.status(401).send(`Limit starts at 1`)
+            postfix = ` limit ${req.body.limit} offset ${req.body.page}`
+        }
+        else {
+            return res.status(401).send(`Wrong format. Body must have page AND limit or nothing!`)
+        }
+    }
+    let response = await utilities.query(`select c.* from bookmark left join challenge c on bookmark.fk_challenge = c.id where bookmark.fk_account = '${res.locals.account_id}' ${postfix}`)
     if(response.error) throw response.error
     res.send(response.result)
 }
