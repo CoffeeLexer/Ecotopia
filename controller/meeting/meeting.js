@@ -74,8 +74,7 @@ async function create(req, res, next) {
     req.body.resources.forEach((e, i) => {
         let s = flag
         if(e.name === undefined) flag = true
-        if(e.min === undefined) flag = true
-        if(e.max === undefined) flag = true
+        if(e.amount === undefined) flag = true
         if(s !== flag) row = i
     })
     if(flag) return res.status(400).send(`Resources array format incorrect. Index ${row}`)
@@ -86,7 +85,7 @@ async function create(req, res, next) {
     let meeting_id = response.result.insertId
     for(let i in req.body.resources) {
         const e = req.body.resources[i]
-        await utilities.query(`insert into resource (name, min, max, fk_meeting) value ('${e.name}', '${e.min}', '${e.max}', '${meeting_id}')`)
+        await utilities.query(`insert into resource (name, amount, fk_meeting) value ('${e.name}', '${e.amount}', '${meeting_id}')`)
     }
     for(let i in req.body.invitations) {
         const e = req.body.invitations[i]
