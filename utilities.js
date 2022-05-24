@@ -17,7 +17,7 @@ function now() {
     month = month.toString().padStart(2, '0')
     let date = d.getDate()
     date = date.toString().padStart(2, '0')
-    let hour = d.getHours()
+    let hour = d.getHours() + 2
     hour = hour.toString().padStart(2, '0')
     let minutes = d.getMinutes()
     minutes = minutes.toString().padStart(2, '0')
