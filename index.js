@@ -12,6 +12,13 @@ const server = http.createServer(app)
 const {Server} = require('socket.io')
 const io = new Server(server)
 
+app.all(/.*/, (req, res, next) => {
+    let time = utilities.now()
+    time = time.substring(time.indexOf(' '))
+    io.of('/debug').emit('log', `${time} ${req.method} ${req.url}`)
+    next()
+})
+
 
 app.get('/meeting/chat', (req, res) => {
     res.sendFile(__dirname + '/socket_io/meeting_chat.html');
@@ -19,8 +26,14 @@ app.get('/meeting/chat', (req, res) => {
 app.get('/error', (req, res) => {
     res.sendFile(__dirname + '/socket_io/error.html');
 });
+app.get('/debug', (req, res) => {
+    res.sendFile(__dirname + '/socket_io/debug.html');
+});
 
 io.of('/error').on('connection', (socket) => {
+
+})
+io.of('/debug').on('connection', (socket) => {
 
 })
 

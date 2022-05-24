@@ -4,19 +4,11 @@ const pepper = require('./settings.json').misc.pepper
 const fs = require('fs')
 
 module.exports = {
-    field_test,
     query,
-    account_find,
-    account_exists,
     structure_test,
     generate_random_sha512,
     hash_password,
-    app: {},
-    now,
-    log
-}
-function log() {
-    
+    now
 }
 function now() {
     const d = new Date()
@@ -45,19 +37,6 @@ function structure_test(structure, fields) {
         if(param === undefined) bad_fields.push(element)
     })
     return bad_fields.join(', ')
-}
-function field_test(structure, fields) {
-    let msg = []
-    fields.forEach(element => {
-        let param = structure[element]
-        if(!param) msg.push(`no body for field '${element}'`)
-    })
-    if(msg.length > 0) return {flag: 'failure', msg: msg}
-    else return {flag: 'success'}
-}
-async function account_exists(cookie) {
-    let response = await scripts.query(`select * from cookies where cookie = '${cookie}'`)
-    return response.result.length === 1
 }
 async function account_find(cookie) {
     let response = await scripts.query(`select * from cookies where cookie = '${cookie}'`)
