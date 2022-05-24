@@ -68,7 +68,7 @@ async function list(req, res, next) {
             left join tag on tag_list.fk_tag = tag.id
             group by id
         ) as a
-        left join meeting on a.id = meeting.fk_challenge
+        left join meeting on a.id = meeting.fk_challenge where meeting.active
         group by a.id
     ) as a
     left join challenge_image on a.id = challenge_image.fk_challenge

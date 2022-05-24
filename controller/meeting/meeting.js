@@ -83,6 +83,7 @@ async function create(req, res, next) {
         value ('${req.body.meetingDate}', '${req.body.challengeId}', '${res.locals.account_id}')`)
     if(response.error) throw response.error
     let meeting_id = response.result.insertId
+    await utilities.query(`update meeting set active = false where fk_challenge = '${req.body.challengeId}' and id != '${meeting_id}'`)
     for(let i in req.body.resources) {
         const e = req.body.resources[i]
         await utilities.query(`insert into resource (name, amount, fk_meeting) value ('${e.name}', '${e.amount}', '${meeting_id}')`)
