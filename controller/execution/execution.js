@@ -45,8 +45,8 @@ async function create(req, res, next) {
     if(result.length === 0) return res.status(404).send(`Challenge not found!`)
     if(result[0].current_execution) return res.status(409).send(`Challenge currently has execution!`)
     result = await db.query(`insert into execution(fk_challenge, fk_account) value ('${req.body.challengeId}', '${res.locals.account_id}')`)
-    console.log(`/execution/list/list/${result.insertId}`)
-    res.redirect(307, `/execution/list/${result.insertId}`)
+    req.url = `/execution/list/list/${result.insertId}`
+    next()
 }
 async function leave(req, res, next) {
     let test = utilities.structure_test(req.body, ['executionId'])

@@ -5,7 +5,7 @@ const mastetRouter = require("../masterRoutes");
 
 const router = express.Router()
 
-router.post('/create', mastetRouter.authenticate, c_meeting.create)
+router.post('/create', mastetRouter.authenticate, c_meeting.create, c_meeting.list)
 router.post(/\/list\/\d+/, c_meeting.list)
 router.post('/list', c_meeting.list)
 

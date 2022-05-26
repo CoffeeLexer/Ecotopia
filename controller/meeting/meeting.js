@@ -54,7 +54,8 @@ async function create(req, res, next) {
         const e = req.body.resources[i]
         await db.query(`insert into resource (name, target_amount, fk_meeting) value ('${e.name}', '${e.targetAmount}', '${meeting_id}')`)
     }
-    res.redirect(307, `/meeting/list/${meeting_id}`)
+    req.url = `/meeting/list/${meeting_id}`
+    next()
 }
 async function join(req, res, next) {
     let test = utilities.structure_test(req.body, ['meetingId'])
