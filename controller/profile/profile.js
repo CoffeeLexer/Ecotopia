@@ -28,7 +28,7 @@ async function list(req, res, next) {
 }
 async function profile(req, res, next) {
     let result = await db.query(`select * from profile where id = '${res.locals.account_id}'`)
-    res.redirect(303, `/profile/list/${res.locals.account_id}`)
+    res.redirect(308, `/profile/list/${res.locals.account_id}`)
 }
 async function setProfilePicture(req, res, next) {
     let files = req.files
