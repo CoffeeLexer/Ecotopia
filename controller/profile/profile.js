@@ -3,19 +3,24 @@ const fs = require("fs")
 const utilities = require("../../utilities")
 
 async function list(req, res, next) {
-    let id = req.url.substring(req.url.lastIndexOf('/') + 1)
-    let postfix = ''
+    let segments = req.url.split('/')
+    let id = segments[segments.length - 1]
+    let result
     if(!isNaN(id)) {
-        postfix = `where id = '${id}'`
+        result = await db.query(`select id, wallet_points, active, defaultAvatarColor, json_external_login as external, json_internal_login_no_password as internal from account_json where id = '${id}'`)
+        if(result.length === 0) return res.status(404).send(`Account not found!`)
     }
     else {
         let test = utilities.structure_test(req.body, ['page', 'limit'])
         if(test) return res.status(400).send(`No body for ${test}!`)
         if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
         if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
-        postfix = `limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`
+        result = await db.query(`select id, wallet_points, active, defaultAvatarColor, json_external_login as external, json_internal_login_no_password as internal from account_json limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     }
-    let result = await db.query(`select * from profile ${postfix}`)
+    result.forEach((e, i, arr) => {
+        arr[i].internal = JSON.parse(e.internal)
+        arr[i].external = JSON.parse(e.external)
+    })
     if(!isNaN(id)) {
         result = result[0]
     }
@@ -23,7 +28,7 @@ async function list(req, res, next) {
 }
 async function profile(req, res, next) {
     let result = await db.query(`select * from profile where id = '${res.locals.account_id}'`)
-    return res.status(200).send(result[0])
+    res.redirect(307, `/profile/list/${res.locals.account_id}`)
 }
 async function setProfilePicture(req, res, next) {
     let files = req.files
