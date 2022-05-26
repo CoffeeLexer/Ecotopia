@@ -5,11 +5,11 @@ async function register(req, res, next) {
     let test = utilities.structure_test(req.body, ['email', 'password', 'firstName', 'lastName'])
     if(test) return res.status(400).send(`No body for ${test}!`)
     let password = utilities.hash_password(req.body.password, req.body.email)
+    let result
     try {
-
-    let result = await db.query(
-        `insert into internal_login(email, password, firstname, lastname)
-        value ('${req.body.email}', '${password}', '${req.firstName}', '${req.lastName}')`)
+        result = await db.query(
+            `insert into internal_login(email, password, firstname, lastname)
+            value ('${req.body.email}', '${password}', '${req.firstName}', '${req.lastName}')`)
     }
     catch(error) {
         if(error.code === 'ER_DUP_ENTRY') {
@@ -17,7 +17,7 @@ async function register(req, res, next) {
         }
         throw error
     }
-    let result = await db.query(`insert into account(fk_internal_login) value ('${result.insertId}')`)
+    result = await db.query(`insert into account(fk_internal_login) value ('${result.insertId}')`)
     let account_id = result.insertId
     let cookie
     let flag = true
