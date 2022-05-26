@@ -1,4 +1,5 @@
-const utilities = require("../../utilities");
+const db = require("../../database");
+const utilities = require("../../utilities")
 
 async function create(req, res, next) {
     let test = utilities.structure_test(req.body, ['name', 'min', 'max'])

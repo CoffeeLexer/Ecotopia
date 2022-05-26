@@ -1,73 +1,39 @@
-const utilities = require("../../utilities");
+const db = require("../../database")
+const utilities = require("../../utilities")
 
 async function list(req, res, next) {
-    let id = req.url.substring(req.url.lastIndexOf('/') + 1)
-    let postfix = ''
+    let segments = req.url.split('/')
+    let id = segments[segments.length - 1]
+    let result
     if(!isNaN(id)) {
-        postfix = `where a.id = '${id}'`
+        result = await db.query(`select * from meeting_deep_json where id = '${id}'`)
+        if(result.length === 0) return res.status(404).send(`Meeting not found!`)
     }
     else {
         let test = utilities.structure_test(req.body, ['page', 'limit'])
         if(test) return res.status(400).send(`No body for ${test}!`)
         if(req.body.page <= 0) return res.status(400).send('Page minimum is 1!')
         if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
-        postfix = `limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`
+        result = await db.query(`select * from meeting_deep_json limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     }
-    let response = await utilities.query(`
-        select a.id as meetingId, a.target_date, a.fk_account as organiser, a.attendees, b.name, b.difficulty, b.postDate, b. pollutionTags, b.latitude, b.longitude, a.resources, a.invitations
-        from (
-                 select a.*, group_concat(invite.pair separator ';') as invitations
-                 from (
-                          select meeting.*, group_concat(attendee.fk_account) as attendees, group_concat(resource.name) as resources
-                          from meeting
-                                   left join attendee on meeting.id = attendee.fk_meeting
-                                   left join resource on meeting.id = resource.fk_meeting
-                          group by meeting.id
-                      ) as a
-                          left join (
-                     select invitation.fk_meeting, concat('"id":"', account.id, '", "status":"', invitation.status, '"') as pair
-                     from invitation
-                              left join account on invitation.fk_account = account.id
-                              left join internal_login il on account.fk_internal_login = il.id
-                 ) as invite on invite.fk_meeting = a.id
-                 group by a.id
-             ) as a
-                 left join (
-            select challenge.id as challangeId,
-                   challenge.name         as name,
-                   challenge.difficulty   as difficulty,
-                   challenge.submitted_on as postDate,
-                   group_concat(tag.name) as pollutionTags,
-                   location.latitude,
-                   location.longitude
-            from challenge
-                     left join account on challenge.fk_account = account.id
-                     left join internal_login on account.fk_internal_login = internal_login.id
-                     left join location on location.fk_challenge = challenge.id
-                     left join tag_list on challenge.id = tag_list.fk_challenge
-                     left join tag on tag_list.fk_tag = tag.id
-            group by challenge.id
-        )
-            as b on b.challangeId = a.fk_challenge
-    ${postfix}`)
-    if(response.error) throw response.error
-    response.result.forEach(e => {
-        if(e.attendees) e.attendees = e.attendees.split(',')
-        if(e.pollutionTags) e.pollutionTags = e.pollutionTags.split(',')
-        if(e.resources) e.resources = e.resources.split(',')
-        if(e.invitations) {
-            e.invitations = e.invitations.split(';')
-            e.invitations.forEach((e, i, arr) => {arr[i] = JSON.parse(`{${e}}`)})
-        }
+    result.forEach((e, i, arr) => {
+        arr[i].resources = JSON.parse(e.resources)
+        arr[i].execution = JSON.parse(e.execution)
+        arr[i].execution.organiser = JSON.parse(e.execution.organiser)
+        arr[i].execution.participants = JSON.parse(e.execution.participants)
+        arr[i].challenge = JSON.parse(e.challenge)
+        arr[i].challenge.author = JSON.parse(e.challenge.author)
+        arr[i].challenge.images = JSON.parse(e.challenge.images)
+        arr[i].challenge.location = JSON.parse(e.challenge.location)
     })
     if(!isNaN(id)) {
-        response.result = response.result[0]
+        result = result[0]
     }
-    return res.status(200).json(response.result)
+    return res.status(200).json(result)
 }
 
 async function create(req, res, next) {
-    let test = utilities.structure_test(req.body, ['challengeId', 'meetingDate', 'resources', 'invitations'])
+    let test = utilities.structure_test(req.body, ['challengeId', 'meetingDate', 'resources'])
     if(test) return res.status(400).send(`No body for ${test}!`)
     let flag = false
     let row = -1
@@ -78,39 +44,36 @@ async function create(req, res, next) {
         if(s !== flag) row = i
     })
     if(flag) return res.status(400).send(`Resources array format incorrect. Index ${row}`)
-    let response = await utilities.query(`
-        insert into meeting (target_date, fk_challenge, fk_account)
-        value ('${req.body.meetingDate}', '${req.body.challengeId}', '${res.locals.account_id}')`)
-    if(response.error) throw response.error
-    let meeting_id = response.result.insertId
-    await utilities.query(`update meeting set active = false where fk_challenge = '${req.body.challengeId}' and id != '${meeting_id}'`)
+    let result = await db.query(`select * from challenge where id = '${req.body.challengeId}'`)
+    if(result.length === 0) return res.status(404).send(`Challenge not found!`)
+    if(result[0].current_execution) return res.status(409).send(`Challenge currently has execution!`)
+    result = await db.query(`insert into execution(fk_challenge, fk_account) value ('${req.body.challengeId}', '${res.locals.account_id}')`)
+    result = await db.query(`insert into meeting(fk_execution, target_date) value ('${result.insertId}', '${req.body.meetingDate}')`)
+    let meeting_id = result.insertId
     for(let i in req.body.resources) {
         const e = req.body.resources[i]
-        await utilities.query(`insert into resource (name, target_amount, fk_meeting) value ('${e.name}', '${e.targetAmount}', '${meeting_id}')`)
+        await db.query(`insert into resource (name, target_amount, fk_meeting) value ('${e.name}', '${e.targetAmount}', '${meeting_id}')`)
     }
-    for(let i in req.body.invitations) {
-        const e = req.body.invitations[i]
-        await utilities.query(`insert into invitation(fk_account, fk_meeting, status) value ('${e}, ${meeting_id}', 'Invited')`)
-    }
-    req.url = req.url.substring(0, req.url.lastIndexOf('/')) + '/list/' + response.result.insertId
-    return await list(req, res, next)
+    res.redirect(307, `/meeting/list/${meeting_id}`)
 }
 async function join(req, res, next) {
     let test = utilities.structure_test(req.body, ['meetingId'])
     if(test) return res.status(400).send(`No body for ${test}!`)
-    let response = await utilities.query(`insert into attendee (fk_account, fk_meeting) value ('${res.locals.account_id}', '${req.body.meetingId}')`)
-    if(response.error) {
-        if(response.error.code === 'ER_DUP_ENTRY') return res.status(405).send('User already is in this meeting!')
-        else throw response.error
+    try {
+        let result = await db.query(`insert into participant (fk_account, fk_execution) value ('${res.locals.account_id}', '${req.body.meetingId}')`)
+    }
+    catch(error) {
+        if(error.code === 'ER_DUP_ENTRY')
+            return res.status(405).send('User already is in this meeting!')
+        throw error
     }
     return res.status(200).send(`Success`)
 }
 async function leave(req, res, next) {
     let test = utilities.structure_test(req.body, ['meetingId'])
     if(test) return res.status(400).send(`No body for ${test}!`)
-    let response = await utilities.query(`delete from attendee where fk_account = '${res.locals.account_id}' and fk_meeting = '${req.body.meetingId}'`)
-    if(response.error) throw response.error
-    if(response.result.affectedRows === 0) return res.status(405).send('User has not joined this meeting!')
+    let result = await db.query(`delete from participant where fk_account = '${res.locals.account_id}' and fk_execution = '${req.body.meetingId}'`)
+    if(result.affectedRows === 0) return res.status(405).send('User has not joined this meeting!')
     return res.status(200).send(`Success`)
 }
 
