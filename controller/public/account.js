@@ -17,7 +17,7 @@ async function register(req, res, next) {
         }
         throw error
     }
-    let result = await db.query(`insert into account(fk_internal_login) value ('${response.result.insertId}')`)
+    let result = await db.query(`insert into account(fk_internal_login) value ('${result.insertId}')`)
     let account_id = result.insertId
     let cookie
     let flag = true
