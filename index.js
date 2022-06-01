@@ -12,7 +12,9 @@ const server = http.createServer(app)
 const {Server} = require('socket.io')
 const io = new Server(server)
 
+
 const utilities = require('./utilities')
+
 
 app.all(/.*/, (req, res, next) => {
     let time = utilities.now()
@@ -29,13 +31,16 @@ app.get('/test', async (req, res, next) => {
 })
 
 app.get('/meeting/chat', (req, res) => {
-    res.sendFile(__dirname + '/socket_io/meeting_chat.html');
+    res.sendFile(__dirname + '/socket_io/client/meeting_chat.html');
 });
 app.get('/error', (req, res) => {
-    res.sendFile(__dirname + '/socket_io/error.html');
+    res.sendFile(__dirname + '/socket_io/client/error.html');
 });
 app.get('/debug', (req, res) => {
-    res.sendFile(__dirname + '/socket_io/debug.html');
+    res.sendFile(__dirname + '/socket_io/client/debug.html');
+});
+app.get('/notification', (req, res) => {
+    res.sendFile(__dirname + '/socket_io/client/notification.html');
 });
 
 io.of('/error').on('connection', (socket) => {
@@ -44,6 +49,21 @@ io.of('/error').on('connection', (socket) => {
 io.of('/debug').on('connection', (socket) => {
 
 })
+
+io.of('/notification').use(async (socket, next) => {
+    const cookie = socket.handshake.auth.cookie;
+    let result = await db.query(`select * from cookies where cookie = '${cookie}'`)
+    if(result.length !== 1) {
+        console.log("no account")
+        return next(new Error('Account not found!'))
+    }
+    socket.account = result[0].fk_account
+    console.log(socket.account)
+    next();
+});
+io.of('/notification').on('connection', (socket) => {
+})
+
 
 io.of('/meeting/chat').on('connection', (socket) => {
     socket.logged_rooms = {}
@@ -126,6 +146,8 @@ app.use('/challenge', require('./route/challenge'))
 app.use('/execution', require('./route/execution'))
 app.use('/meeting', require('./route/meeting'))
 app.use('/bookmark', require('./route/bookmark'))
+app.use('/resource', require('./route/resource'))
+app.use('/notification', require('./route/notification'))
 
 app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')
@@ -134,3 +156,9 @@ app.all(/.*/, (req, res) => {
 server.listen(settings.server.port, () => {
     console.log(`Server running on: localhost:${settings.server.port}`)
 })
+
+module.exports = {
+    io,
+    app,
+    server
+}

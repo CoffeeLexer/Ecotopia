@@ -31,6 +31,11 @@ async function edit(req, res, next) {
 async function list(req, res, next) {
     let segments = req.url.split('/')
     let id = segments[segments.length - 1]
+
+    let bookmarks = await db.query(`select * from bookmark where fk_account = '${res.locals.account_id}'`)
+    let participation = await db.query(`select * from participant where fk_account = '${res.locals.account_id}'`)
+    let invitations = await db.query(`select * from invitation where fk_account = '${res.locals.account_id}'`)
+
     if(!isNaN(id)) {
         result = await db.query(`select * from challenge_deep_json where id = '${id}'`)
     }
@@ -46,7 +51,9 @@ async function list(req, res, next) {
         arr[i].location = JSON.parse(e.location)
         arr[i].images = JSON.parse(e.images)
         arr[i].execution = JSON.parse(e.execution)
-        if(e.execution) arr[i].execution.organiser = JSON.parse(e.execution.organiser)
+        if(e.execution) {
+            arr[i].execution.organiser = JSON.parse(e.execution.organiser)
+        }
         arr[i].meeting = JSON.parse(e.meeting)
         if(e.meeting) arr[i].meeting.resources = JSON.parse(e.meeting.resources)
     })

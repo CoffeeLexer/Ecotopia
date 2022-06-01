@@ -1,5 +1,6 @@
 const db = require("../../database")
 const utilities = require("../../utilities")
+const formats = require("../../formats")
 
 async function list(req, res, next) {
     let segments = req.url.split('/')
@@ -16,16 +17,7 @@ async function list(req, res, next) {
         if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
         result = await db.query(`select * from meeting_deep_json limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     }
-    result.forEach((e, i, arr) => {
-        arr[i].resources = JSON.parse(e.resources)
-        arr[i].execution = JSON.parse(e.execution)
-        arr[i].execution.organiser = JSON.parse(e.execution.organiser)
-        arr[i].execution.participants = JSON.parse(e.execution.participants)
-        arr[i].challenge = JSON.parse(e.challenge)
-        arr[i].challenge.author = JSON.parse(e.challenge.author)
-        arr[i].challenge.images = JSON.parse(e.challenge.images)
-        arr[i].challenge.location = JSON.parse(e.challenge.location)
-    })
+    result = formats.meeting_deep(result)
     if(!isNaN(id)) {
         result = result[0]
     }
@@ -77,10 +69,26 @@ async function leave(req, res, next) {
     if(result.affectedRows === 0) return res.status(405).send('User has not joined this meeting!')
     return res.status(200).send(`Success`)
 }
+async function edit(req, res, next) {
+    let segments = req.url.split('/')
+    let id = segments[segments.length - 1]
+    let test = utilities.structure_test(req.body, ['meetingDate'])
+    if(test) return res.status(400).send(`No body for ${test}!`)
+    let result = await db.query(`select * from meeting_deep_json where id = ${id}`)
+    if(result.length !== 1) return res.status(404).send(`Meeting not found!`)
+    result = formats.meeting_deep(result)
+    let meeting = result[0]
+    let organiser = meeting.execution.organiser
+    if(organiser.id !== res.locals.account_id) return res.status(403).send(`Account is not organiser!`)
+    await db.query(`update meeting set target_date = '${req.body.meetingDate}' where id = '${id}'`)
+    req.url = `/meeting/list/${id}`
+    next()
+}
 
 module.exports = {
     list,
     create,
     join,
-    leave
+    leave,
+    edit
 }
