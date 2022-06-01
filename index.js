@@ -58,7 +58,6 @@ io.of('/notification').use(async (socket, next) => {
         return next(new Error('Account not found!'))
     }
     socket.account = result[0].fk_account
-    console.log(socket.account)
     next();
 });
 io.of('/notification').on('connection', (socket) => {
