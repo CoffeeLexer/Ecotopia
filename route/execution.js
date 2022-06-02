@@ -10,7 +10,7 @@ router.post('/create', mastetRouter.authenticate, c_meeting.create, c_meeting.li
 router.post('/leave', mastetRouter.authenticate, c_meeting.leave)
 router.post(/\/list\/\d+\/chat\/list\/\d+/, masterRoutes.authenticate, c_chat.list)
 router.post(/\/list\/\d+\/chat\/list/, masterRoutes.authenticate, c_chat.list)
-router.post(/\/list\/\d+/, c_meeting.list)
-router.post('/list', c_meeting.list)
+router.post(/\/list\/\d+/, masterRoutes.authenticate, c_meeting.list)
+router.post('/list', masterRoutes.authenticate, c_meeting.list)
 
 module.exports = router;

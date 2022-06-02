@@ -1,5 +1,6 @@
 const db = require("../../database")
 const utilities = require("../../utilities")
+const formats = require('../../formats')
 
 async function create(req, res, next) {
     let test = utilities.structure_test(req.body, ['name', 'difficulty', 'pollutionTags', 'latitude', 'longitude'])
@@ -35,7 +36,7 @@ async function list(req, res, next) {
     let bookmarks = await db.query(`select * from bookmark where fk_account = '${res.locals.account_id}'`)
     let participation = await db.query(`select * from participant where fk_account = '${res.locals.account_id}'`)
     let invitations = await db.query(`select * from invitation where fk_account = '${res.locals.account_id}'`)
-
+    let result
     if(!isNaN(id)) {
         result = await db.query(`select * from challenge_deep_json where id = '${id}'`)
     }
@@ -46,17 +47,7 @@ async function list(req, res, next) {
         if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
         result = await db.query(`select * from challenge_deep_json limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     }
-    result.forEach((e, i, arr) => {
-        arr[i].author = JSON.parse(e.author)
-        arr[i].location = JSON.parse(e.location)
-        arr[i].images = JSON.parse(e.images)
-        arr[i].execution = JSON.parse(e.execution)
-        if(e.execution) {
-            arr[i].execution.organiser = JSON.parse(e.execution.organiser)
-        }
-        arr[i].meeting = JSON.parse(e.meeting)
-        if(e.meeting) arr[i].meeting.resources = JSON.parse(e.meeting.resources)
-    })
+    result = formats.challenge_deep(result)
     if(!isNaN(id)) {
         result = result[0]
     }

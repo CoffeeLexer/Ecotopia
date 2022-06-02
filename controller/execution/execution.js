@@ -1,6 +1,6 @@
 const db = require("../../database")
 const utilities = require("../../utilities")
-
+const formats = require('../../formats')
 
 // UP TO DATE
 async function list(req, res, next) {
@@ -18,18 +18,24 @@ async function list(req, res, next) {
         if(req.body.limit <= 0) return res.status(400).send('Limit minimum is 1!')
         result = await db.query(`select * from execution_full limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     }
+    result = formats.execution_full(result)
+    let bookmarks = await db.query(`select * from bookmark where fk_account = '${res.locals.account_id}'`)
+    let attendance = await db.query(`select * from participant where fk_account = '${res.locals.account_id}'`)
+    let invitations = await db.query(`select * from invitation where fk_account = '${res.locals.account_id}'`)
     result.forEach((e, i, arr) => {
-        arr[i].organiser = JSON.parse(e.organiser)
-        if(e.current_meeting) {
-            arr[i].current_meeting = JSON.parse(e.current_meeting)
-            arr[i].current_meeting.resources = JSON.parse(e.current_meeting.resources)
+        if(bookmarks.find(e1 => e1.fk_challenge === e.challenge.id) !== undefined) {
+            arr[i].challenge.bookmarked = true
         }
-        arr[i].challenge = JSON.parse(e.challenge)
-        arr[i].challenge.author = JSON.parse(e.challenge.author)
-        arr[i].challenge.location = JSON.parse(e.challenge.location)
-        arr[i].challenge.images = JSON.parse(e.challenge.images)
-        if(e.participants) arr[i].participants = JSON.parse(e.participants)
-        if(e.invitations) arr[i].invitations = JSON.parse(e.invitations)
+        if(attendance.find(e1 => e1.fk_execution === e.id) !== undefined) {
+            arr[i].participationState = 'Attending'
+        }
+        let invite = invitations.find(e1 => e1.fk_execution === e.id)
+        if(invite !== undefined) {
+            arr[i].participationState = `Invite:${invite.status}`
+        }
+        if(e.organiser.id === res.locals.account_id) {
+            arr[i].participationState = 'Organiser'
+        }
     })
     if(!isNaN(id)) {
         result = result[0]
