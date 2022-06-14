@@ -1,4 +1,5 @@
 const db = require('../../database')
+const formats = require('../../formats')
 
 async function get(req, res, next) {
     let segments = req.url.split('/')
@@ -8,17 +9,39 @@ async function get(req, res, next) {
 }
 async function getAll(req, res, next) {
     let postfix = ``
-    if(req.body.page || req.body.limit) {
-        if(req.body.page && req.body.limit) {
-            if(req.body.page < 1) return res.status(401).send(`Page starts at 1`)
-            if(req.body.limit < 1) return res.status(401).send(`Limit starts at 1`)
-            postfix = ` limit ${req.body.limit} offset ${req.body.page}`
-        }
-        else {
-            return res.status(401).send(`Wrong format. Body must have page AND limit or nothing!`)
-        }
+    if(req.body.page && req.body.limit) {
+        if(req.body.page < 1) return res.status(401).send(`Page starts at 1`)
+        if(req.body.limit < 1) return res.status(401).send(`Limit starts at 1`)
+        postfix = ` limit ${req.body.limit} offset ${req.body.page}`
     }
-    let result = await db.query(`select c.* from bookmark left join challenge c on bookmark.fk_challenge = c.id where bookmark.fk_account = '${res.locals.account_id}' ${postfix}`)
+    else {
+        return res.status(401).send(`Wrong format. Body must have page AND limit or nothing!`)
+    }
+    let result = await db.query(`
+        select challenge_deep_json.*
+        from bookmark left join challenge_deep_json on challenge_deep_json.id = bookmark.fk_challenge
+        where bookmark.fk_account = '${res.locals.account_id}' ${postfix}`)
+    result = formats.challenge_deep(result)
+    let bookmarks = await db.query(`select * from bookmark where fk_account = '${res.locals.account_id}'`)
+    let attendance = await db.query(`select * from participant where fk_account = '${res.locals.account_id}'`)
+    let invitations = await db.query(`select * from invitation where fk_account = '${res.locals.account_id}'`)
+    result.forEach((e, i, arr) => {
+        if(bookmarks.find(e1 => e1.fk_challenge === e.id) !== undefined) {
+            arr[i].bookmarked = true
+        }
+        if(e.execution) {
+            if(attendance.find(e1 => e1.fk_execution === e.execution.id) !== undefined) {
+                arr[i].participationState = 'Attending'
+            }
+            if(invitations.find(e1 => e1.fk_execution === e.execution.id) !== undefined) {
+                arr[i].participationState = `Invited`
+            }
+            if(e.execution.organiser.id === res.locals.account_id) {
+                arr[i].participationState = 'Organiser'
+            }
+        }
+        // Default participationState: "None"
+    })
     res.send(result)
 }
 async function remove(req, res, next) {

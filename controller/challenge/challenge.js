@@ -32,10 +32,6 @@ async function edit(req, res, next) {
 async function list(req, res, next) {
     let segments = req.url.split('/')
     let id = segments[segments.length - 1]
-
-    let bookmarks = await db.query(`select * from bookmark where fk_account = '${res.locals.account_id}'`)
-    let participation = await db.query(`select * from participant where fk_account = '${res.locals.account_id}'`)
-    let invitations = await db.query(`select * from invitation where fk_account = '${res.locals.account_id}'`)
     let result
     if(!isNaN(id)) {
         result = await db.query(`select * from challenge_deep_json where id = '${id}'`)
@@ -48,6 +44,26 @@ async function list(req, res, next) {
         result = await db.query(`select * from challenge_deep_json limit ${req.body.limit} offset ${req.body.limit * (req.body.page - 1)}`)
     }
     result = formats.challenge_deep(result)
+    let bookmarks = await db.query(`select * from bookmark where fk_account = '${res.locals.account_id}'`)
+    let attendance = await db.query(`select * from participant where fk_account = '${res.locals.account_id}'`)
+    let invitations = await db.query(`select * from invitation where fk_account = '${res.locals.account_id}'`)
+    result.forEach((e, i, arr) => {
+        if(bookmarks.find(e1 => e1.fk_challenge === e.id) !== undefined) {
+            arr[i].bookmarked = true
+        }
+        if(e.execution) {
+            if(attendance.find(e1 => e1.fk_execution === e.execution.id) !== undefined) {
+                arr[i].participationState = 'Attending'
+            }
+            if(invitations.find(e1 => e1.fk_execution === e.execution.id) !== undefined) {
+                arr[i].participationState = `Invited`
+            }
+            if(e.execution.organiser.id === res.locals.account_id) {
+                arr[i].participationState = 'Organiser'
+            }
+        }
+        // Default participationState: "None"
+    })
     if(!isNaN(id)) {
         result = result[0]
     }

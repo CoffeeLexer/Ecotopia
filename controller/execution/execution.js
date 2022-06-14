@@ -31,11 +31,12 @@ async function list(req, res, next) {
         }
         let invite = invitations.find(e1 => e1.fk_execution === e.id)
         if(invite !== undefined) {
-            arr[i].participationState = `Invite:${invite.status}`
+            arr[i].participationState = `Invited`
         }
         if(e.organiser.id === res.locals.account_id) {
             arr[i].participationState = 'Organiser'
         }
+        // "None"
     })
     if(!isNaN(id)) {
         result = result[0]

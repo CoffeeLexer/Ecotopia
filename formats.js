@@ -56,6 +56,8 @@ function challenge_deep(array) {
         }
         arr[i].meeting = JSON.parse(e.meeting)
         if(e.meeting) arr[i].meeting.resources = JSON.parse(e.meeting.resources)
+        arr[i].participationState = 'None'
+        arr[i].bookmarked = false
     })
     return array
 }
