@@ -12,7 +12,7 @@ async function getAll(req, res, next) {
     if(req.body.page && req.body.limit) {
         if(req.body.page < 1) return res.status(401).send(`Page starts at 1`)
         if(req.body.limit < 1) return res.status(401).send(`Limit starts at 1`)
-        postfix = ` limit ${req.body.limit} offset ${req.body.page}`
+        postfix = ` limit ${req.body.limit} offset ${req.body.page * req.body.limit}`
     }
     else {
         return res.status(401).send(`Wrong format. Body must have page AND limit or nothing!`)
