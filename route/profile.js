@@ -13,5 +13,6 @@ router.get(/\/list\/\d+\/banner/,  mastetRouter.authenticate,c_profile.getBanner
 router.post('', mastetRouter.authenticate, c_profile.profile, c_profile.list)
 router.post('/picture/set', mastetRouter.authenticate, upload.any(), c_profile.setProfilePicture)
 router.post('/banner/set', mastetRouter.authenticate, upload.any(), c_profile.setProfileBanner)
+router.post('/search', c_profile.search)
 
 module.exports = router;

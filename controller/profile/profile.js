@@ -67,12 +67,21 @@ async function getBanner(req, res, next) {
     res.set('Content-Type', result[0].banner_pic_mime)
     res.send(img)
 }
-
+async function search(req, res, next) {
+    let test = utilities.structure_test(req.body, ['string'])
+    if(test) return res.status(400).send(`No body for ${test}!`)
+    let segments = req.body.string.split(' ')
+    let mapped = segments.map(x => `firstname like '%${x}%' or lastname like '%${x}%'`)
+    let postfix = mapped.join(' or ')
+    let result = await db.query(`select * from profile where ${postfix}`)
+    res.json(result)
+}
 module.exports = {
     list,
     profile,
     setProfilePicture,
     setProfileBanner,
     getPicture,
-    getBanner
+    getBanner,
+    search
 }
