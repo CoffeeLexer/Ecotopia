@@ -55,16 +55,58 @@ async function create(req, res, next) {
     req.url = `/execution/list/list/${result.insertId}`
     next()
 }
+
 async function leave(req, res, next) {
     let test = utilities.structure_test(req.body, ['executionId'])
     if(test) return res.status(400).send(`No body for ${test}!`)
-    let result = await db.query(`delete from participant where fk_account = '${res.locals.account_id}' and fk_execution = '${req.body.executionId}'`)
-    if(result.affectedRows === 0) return res.status(405).send('User has not joined this meeting!')
+    let result = await db.query(`select * from execution where id = '${req.body.executionId}'`)
+    if(result.length !== 1) return res.status(404).send(`Execution not found!`)
+    if(result[0].fk_account === res.locals.account_id) return res.status(401).send(`Organiser cannot leave his execution!`)
+    result = await db.query(`delete from participant where fk_account = '${res.locals.account_id}' and fk_execution = '${req.body.executionId}'`)
+    if(result.affectedRows === 0) return res.status(405).send('User has not joined this execution!')
     return res.status(200).send(`Success!`)
 }
-
+async function join(req, res, next) {
+    let test = utilities.structure_test(req.body, ['executionId'])
+    if(test) return res.status(400).send(`No body for ${test}!`)
+    let result = await db.query(`select * from execution where id = '${req.body.executionId}'`)
+    if(result.length !== 1) return res.status(404).send(`Execution not found!`)
+    if(result[0].fk_account === res.locals.account_id) return res.status(401).send(`Organiser cannot join his execution!`)
+    result = await db.query(`delete from invitation where fk_account = '${res.locals.account_id}' and fk_execution = '${req.body.executionId}'`)
+    if(result.affectedRows === 0) {
+        result = await db.query(`select * from participant where fk_account = '${res.locals.account_id}' and fk_execution = '${req.body.executionId}'`)
+        if(result.length === 0) {
+            return res.status(405).send('User is not invited!')
+        }
+        else {
+            return res.status(405).send('User has already joined this execution!')
+        }
+    }
+    await db.query(`insert into participant(fk_account, fk_execution) value ('${res.locals.account_id}', '${req.body.executionId}')`)
+    return res.status(200).send('Success!')
+}
+async function invite(req, res, next) {
+    let test = utilities.structure_test(req.body, ['executionId', 'accountId'])
+    if(test) return res.status(400).send(`No body for ${test}!`)
+    let result = await db.query(`select * from account where id = '${req.body.accountId}'`)
+    if(result.length !== 1) return res.status(404).send(`Account not found!`)
+    result = await db.query(`select * from execution where id = '${req.body.executionId}'`)
+    if(result.length !== 1) return res.status(404).send(`Execution not found!`)
+    if(req.body.accountId === res.locals.account_id) return res.status(405).send('Organiser cannot be invited!')
+    result = await db.query(`select * from execution where id = '${req.body.executionId}'`)
+    if(result.length === 0) return res.status(404).send(`Execution not found!`)
+    if(result[0].fk_account !== res.locals.account_id) return res.status(401).send(`Only organiser can invite users!`)
+    result = await db.query(`select * from participant where fk_account = '${req.body.accountId}' and fk_execution = '${req.body.executionId}'`)
+    if(result.length !== 0) return res.status(405).send('User has already joined this execution!')
+    result = await db.query(`select * from invitation where fk_account = '${req.body.accountId}' and fk_execution = '${req.body.executionId}'`)
+    if(result.length !== 0) return res.status(405).send('User is already invited!')
+    await db.query(`insert into invitation(fk_account, fk_execution) value ('${req.body.accountId}', '${req.body.executionId}')`)
+    res.status(200).send(`Success!`)
+}
 module.exports = {
     list,
     create,
-    leave
+    join,
+    leave,
+    invite
 }

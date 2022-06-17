@@ -76,6 +76,7 @@ async function search(req, res, next) {
     let result = await db.query(`select * from profile where ${postfix}`)
     res.json(result)
 }
+
 module.exports = {
     list,
     profile,
