@@ -147,6 +147,8 @@ app.use('/meeting', require('./route/meeting'))
 app.use('/bookmark', require('./route/bookmark'))
 app.use('/resource', require('./route/resource'))
 app.use('/notification', require('./route/notification'))
+app.use('/claim', require('./route/claim'))
+app.use('/post', require('./route/post'))
 
 app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')

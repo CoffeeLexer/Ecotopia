@@ -2,7 +2,8 @@ module.exports = {
     meeting_deep,
     notification,
     execution_full,
-    challenge_deep
+    challenge_deep,
+    post_full
 }
 
 function meeting_deep(array) {
@@ -58,6 +59,14 @@ function challenge_deep(array) {
         if(e.meeting) arr[i].meeting.resources = JSON.parse(e.meeting.resources)
         arr[i].participationState = 'None'
         arr[i].bookmarked = false
+    })
+    return array
+}
+function post_full(array) {
+    array.forEach((e, i, arr) => {
+        arr[i].account = JSON.parse(e.account)
+        arr[i].claim_images = JSON.parse(e.claim_images)
+        arr[i].challenge_images = JSON.parse(e.challenge_images)
     })
     return array
 }
