@@ -69,14 +69,14 @@ io.of('/meeting/chat').on('connection', (socket) => {
     socket.on('join', async (data) => {
         if(data.meeting_id && data.cookie) {
             // Find auth cookie
-            let response = await utilities.query(`select * from cookies where cookie = '${data.cookie}'`)
-            if(response.result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account not found!`)
+            let result = await utilities.query(`select * from cookies where cookie = '${data.cookie}'`)
+            if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account not found!`)
             // Get profile
-            response = await utilities.query(`select * from profile where id = '${response.result[0].fk_account}'`)
-            let user = response.result[0]
+            result = await utilities.query(`select * from profile where id = '${result[0].fk_account}'`)
+            let user = result.result[0]
             // Check if account has access to meetings chat
-            response = await utilities.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
-            if(response.result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account is not attending this meeting!`)
+            result = await utilities.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
+            if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account is not attending this meeting!`)
             socket.logged_rooms[data.meeting_id] = {user: user, auth: data.cookie}
             socket.join(data.meeting_id)
             socket.to(data.meeting_id).emit('user_joined', user)
