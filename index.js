@@ -7,11 +7,11 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookie_parser())
 
-// const http = require('http')
-// const server = http.createServer(app)
-// const {Server} = require('socket.io')
-// const io = new Server(server)
-const io = require('socket.io')(443)
+const http = require('http')
+const server = http.createServer(app)
+const {Server} = require('socket.io')
+const io = new Server(server)
+
 
 const utilities = require('./utilities')
 
@@ -67,9 +67,9 @@ io.of('/notification').on('connection', (socket) => {
 io.of('/meeting/chat').on('connection', (socket) => {
     console.log(`SOCKET CONNECTED: ${socket.id}`)
     socket.logged_rooms = {}
-    // socket.onAny((eventName, ...args) => {
-    //     console.log(eventName)
-    // });
+    socket.onAny((eventName, ...args) => {
+        console.log(eventName)
+    });
     socket.on('join', async (data) => {
         if(data.meeting_id && data.cookie) {
             // Find auth cookie
@@ -94,7 +94,7 @@ io.of('/meeting/chat').on('connection', (socket) => {
     })
     socket.on('message', async (data) => {
         if(data.meeting_id) {
-            if(socket.logged_rooms.has(data.meeting_id)) {
+            if(socket.rooms.has(data.meeting_id)) {
                 if(!data.message) return io.of('/error').emit('log', `${socket.id} MESSAGE, text of message is empty!`)
                 socket.to(data.meeting_id).emit('message', {user: socket.logged_rooms[data.meeting_id].user, message: data.message})
                 await db.query(`insert into execution_message(content, fk_account, fk_meeting) value ('${data.message}', '${socket.logged_rooms[data.meeting_id].user.id}', '${data.meeting_id}')`)
@@ -108,7 +108,7 @@ io.of('/meeting/chat').on('connection', (socket) => {
     })
     socket.on('start_typing', (data) => {
         if(data.meeting_id) {
-            if(socket.logged_rooms.has(data.meeting_id)) {
+            if(socket.rooms.has(data.meeting_id)) {
                 socket.to(data.meeting_id).emit('start_typing', socket.logged_rooms[data.meeting_id].user)
             }
             else
@@ -120,7 +120,7 @@ io.of('/meeting/chat').on('connection', (socket) => {
     })
     socket.on('end_typing', (data) => {
         if(data.meeting_id) {
-            if(socket.logged_rooms.has(data.meeting_id)) {
+            if(socket.rooms.has(data.meeting_id)) {
                 socket.to(data.meeting_id).emit('end_typing', socket.logged_rooms[data.meeting_id].user)
             }
             else
@@ -132,7 +132,7 @@ io.of('/meeting/chat').on('connection', (socket) => {
     })
     socket.on('leave', (data) => {
         if(data.meeting_id) {
-            if(socket.logged_rooms.has(data.meeting_id)) {
+            if(socket.rooms.has(data.meeting_id)) {
                 socket.logged_rooms[data.meeting_id] = undefined
                 socket.leave(data.meeting_id)
                 socket.to(data.meeting_id).emit('user_left', user)
@@ -161,12 +161,12 @@ app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')
 })
 
-// server.listen(settings.server.port, () => {
-//     console.log(`Server running on: localhost:${settings.server.port}`)
-// })
+server.listen(settings.server.port, () => {
+    console.log(`Server running on: localhost:${settings.server.port}`)
+})
 
 module.exports = {
     io,
     app,
-    //server
+    server
 }
