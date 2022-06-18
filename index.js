@@ -69,13 +69,13 @@ io.of('/meeting/chat').on('connection', (socket) => {
     socket.on('join', async (data) => {
         if(data.meeting_id && data.cookie) {
             // Find auth cookie
-            let result = await utilities.query(`select * from cookies where cookie = '${data.cookie}'`)
+            let result = await db.query(`select * from cookies where cookie = '${data.cookie}'`)
             if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account not found!`)
             // Get profile
-            result = await utilities.query(`select * from profile where id = '${result[0].fk_account}'`)
+            result = await db.query(`select * from profile where id = '${result[0].fk_account}'`)
             let user = result.result[0]
             // Check if account has access to meetings chat
-            result = await utilities.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
+            result = await db.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
             if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account is not attending this meeting!`)
             socket.logged_rooms[data.meeting_id] = {user: user, auth: data.cookie}
             socket.join(data.meeting_id)
@@ -90,7 +90,7 @@ io.of('/meeting/chat').on('connection', (socket) => {
             if(socket.rooms.has(data.meeting_id)) {
                 if(!data.message) return io.of('/error').emit('log', `${socket.id} MESSAGE, text of message is empty!`)
                 socket.to(data.meeting_id).emit('message', {user: socket.logged_rooms[data.meeting_id].user, message: data.message})
-                await utilities.query(`insert into execution_message(content, fk_account, fk_meeting) value ('${data.message}', '${socket.logged_rooms[data.meeting_id].user.id}', '${data.meeting_id}')`)
+                await db.query(`insert into execution_message(content, fk_account, fk_meeting) value ('${data.message}', '${socket.logged_rooms[data.meeting_id].user.id}', '${data.meeting_id}')`)
             }
             else
                 io.of('/error').emit('log', `${socket.id} MESSAGE socket has NOT joined this meeting! (refer to 'join')`)
