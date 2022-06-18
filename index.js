@@ -11,7 +11,7 @@ app.use(cookie_parser())
 // const server = http.createServer(app)
 // const {Server} = require('socket.io')
 // const io = new Server(server)
-const io = require('socket.io')(80)
+const io = require('socket.io')(443)
 
 const utilities = require('./utilities')
 
