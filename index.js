@@ -67,9 +67,9 @@ io.of('/notification').on('connection', (socket) => {
 io.of('/meeting/chat').on('connection', (socket) => {
     console.log(`SOCKET CONNECTED: ${socket.id}`)
     socket.logged_rooms = {}
-    socket.onAny((eventName, ...args) => {
-        console.log(eventName)
-    });
+    // socket.onAny((eventName, ...args) => {
+    //     console.log(eventName)
+    // });
     socket.on('join', async (data) => {
         if(data.meeting_id && data.cookie) {
             // Find auth cookie
