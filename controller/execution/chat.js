@@ -6,8 +6,12 @@ async function list(req, res, next) {
     let meeting_id = segments[2]
     let message_id = segments.length === 6 ? segments[5] : undefined
 
-    let result = await db.query(`select * from participant where fk_account = '${res.locals.account_id}' and fk_execution = '${meeting_id}'`)
-    if(result.length === 0) return res.status(403).send(`Account has no access to meeting!`)
+    let result = await db.query(`select * from execution where id = '${message_id}'`)
+    if(result.length === 0) return res.status(404).send(`Execution not found!`)
+    if(result[0].fk_account !== res.locals.account_id) {
+        result = await db.query(`select * from participant where fk_account = '${res.locals.account_id}' and fk_execution = '${meeting_id}'`)
+        if(result.length === 0) return res.status(403).send(`Account has no access to meeting!`)
+    }
 
     if(message_id) {
         let result = await db.query(`select * from meeting_chat_view where meeting_id = '${meeting_id}' and message_id = '${message_id}'`)
