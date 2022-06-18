@@ -7,11 +7,11 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookie_parser())
 
-const http = require('http')
-const server = http.createServer(app)
-const {Server} = require('socket.io')
-const io = new Server(server)
-
+// const http = require('http')
+// const server = http.createServer(app)
+// const {Server} = require('socket.io')
+// const io = new Server(server)
+const io = require('socket.io')(80)
 
 const utilities = require('./utilities')
 
@@ -161,12 +161,12 @@ app.all(/.*/, (req, res) => {
     return res.status(404).send('Route not found!')
 })
 
-server.listen(settings.server.port, () => {
-    console.log(`Server running on: localhost:${settings.server.port}`)
-})
+// server.listen(settings.server.port, () => {
+//     console.log(`Server running on: localhost:${settings.server.port}`)
+// })
 
 module.exports = {
     io,
     app,
-    server
+    //server
 }
