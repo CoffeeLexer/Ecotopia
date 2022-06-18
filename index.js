@@ -73,7 +73,7 @@ io.of('/meeting/chat').on('connection', (socket) => {
             if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account not found!`)
             // Get profile
             result = await db.query(`select * from profile where id = '${result[0].fk_account}'`)
-            let user = result.result[0]
+            let user = result[0]
             // Check if account has access to meetings chat
             result = await db.query(`select * from execution where id = '${data.meeting_id}' and fk_account = '${user.id}'`)
             if(result.length !== 1) {
