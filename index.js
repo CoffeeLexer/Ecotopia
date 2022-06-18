@@ -75,8 +75,11 @@ io.of('/meeting/chat').on('connection', (socket) => {
             result = await db.query(`select * from profile where id = '${result[0].fk_account}'`)
             let user = result.result[0]
             // Check if account has access to meetings chat
-            result = await db.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
-            if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account is not attending this meeting!`)
+            result = await db.query(`select * from execution where id = '${data.meeting_id}' and fk_account = '${user.id}'`)
+            if(result.length !== 1) {
+                result = await db.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
+                if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account is not attending this meeting!`)
+            }
             socket.logged_rooms[data.meeting_id] = {user: user, auth: data.cookie}
             socket.join(data.meeting_id)
             socket.to(data.meeting_id).emit('user_joined', user)
