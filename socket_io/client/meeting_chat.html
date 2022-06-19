@@ -9,15 +9,11 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
     var socket = io('/meeting/chat');
-    socket.on('user_joined',(data) => {
-        console.log(data)
-    })
-    socket.on('user_left',(data) => {
-        console.log(data)
-    })
-    socket.on('message',(data) => {
-        console.log(data)
-    })
+    socket.onAny((eventName, ...args) => {
+        console.log(`Event: ${eventName}`)
+        console.log(args[0])
+    });
+
 </script>
 </body>
 </html>

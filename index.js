@@ -65,84 +65,80 @@ io.of('/notification').on('connection', (socket) => {
 
 
 io.of('/meeting/chat').on('connection', (socket) => {
-    console.log(`SOCKET CONNECTED: ${socket.id}`)
+    let response = io.of('/meeting/chat').to(socket.id)
+    response.emit('response', {method: `connection`, status: 200})
     socket.logged_rooms = {}
-    socket.onAny((eventName, ...args) => {
-        console.log(eventName)
-    });
+    socket.on('test', (data) => {
+        response.emit('response', {method: `test`, status: 200})
+    })
     socket.on('join', async (data) => {
-        if(data.meeting_id && data.cookie) {
-            // Find auth cookie
-            let result = await db.query(`select * from cookies where cookie = '${data.cookie}'`)
-            if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account not found!`)
-            // Get profile
-            result = await db.query(`select * from profile where id = '${result[0].fk_account}'`)
-            let user = result[0]
-            // Check if account has access to meetings chat
-            result = await db.query(`select * from execution where id = '${data.meeting_id}' and fk_account = '${user.id}'`)
-            if(result.length !== 1) {
-                result = await db.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
-                if(result.length !== 1) return io.of('/error').emit('log', `${socket.id} Account is not attending this meeting!`)
-            }
-            socket.logged_rooms[data.meeting_id] = {user: user, auth: data.cookie}
-            socket.join(data.meeting_id)
-            socket.to(data.meeting_id).emit('user_joined', user)
+        let test = utilities.structure_test(data, ['meeting_id', 'cookie'])
+        if(test) return response.emit('response', {method: `join`, status: 400, error: `Body for ${test} undefined!`})
+        // Find auth cookie
+        let result = await db.query(`select * from cookies where cookie = '${data.cookie}'`)
+        if(result.length !== 1) return response.emit('response', {method: `join`, status: 404, error: `User not found!`})
+        // Get profile
+        result = await db.query(`select * from profile where id = '${result[0].fk_account}'`)
+        let user = result[0]
+        // Check if account has access to meetings chat
+        result = await db.query(`select * from execution where id = '${data.meeting_id}' and fk_account = '${user.id}'`)
+        if(result.length !== 1) {
+            result = await db.query(`select * from participant where fk_account = '${user.id}' and fk_execution = '${data.meeting_id}'`)
+            if(result.length !== 1) return response.emit('response', {method: 'join', status: 405, error: `Account is not attending this meeting!`})
         }
-        else {
-            io.of('/error').emit('log', `${socket.id} JOIN Struct not met {meeting_id: id of meeting, cookie: accounts auth cookie}`)
-        }
+        socket.logged_rooms[data.meeting_id] = {user: user, auth: data.cookie}
+        socket.join(data.meeting_id)
+        socket.to(data.meeting_id).emit('user_joined', user)
+        return response.emit('response', {method: 'join', status: 200})
     })
     socket.on('message', async (data) => {
-        if(data.meeting_id) {
-            if(socket.rooms.has(data.meeting_id)) {
-                if(!data.message) return io.of('/error').emit('log', `${socket.id} MESSAGE, text of message is empty!`)
-                socket.to(data.meeting_id).emit('message', {user: socket.logged_rooms[data.meeting_id].user, message: data.message})
-                await db.query(`insert into execution_message(content, fk_account, fk_meeting) value ('${data.message}', '${socket.logged_rooms[data.meeting_id].user.id}', '${data.meeting_id}')`)
-            }
-            else
-                io.of('/error').emit('log', `${socket.id} MESSAGE socket has NOT joined this meeting! (refer to 'join')`)
+        let test = utilities.structure_test(data, ['meeting_id', 'message'])
+        if(test) return response.emit('response', {method: `message`, status: 400, error: `Body for ${test} undefined!`})
+        if(socket.rooms.has(data.meeting_id)) {
+            socket.to(data.meeting_id).emit('message', {
+                user: socket.logged_rooms[data.meeting_id].user,
+                message: data.message
+            })
+            await db.query(`insert into execution_message(content, fk_account, fk_meeting) value ('${data.message}', '${socket.logged_rooms[data.meeting_id].user.id}', '${data.meeting_id}')`)
         }
         else {
-            io.of('/error').emit('log', `${socket.id} MESSAGE 'meeting_id' not specified!`)
+            return response.emit('response', {method: 'message', status: 401, error: 'User has not joined this meeting'})
         }
+        return response.emit('response', {method: 'message', status: 200})
     })
     socket.on('start_typing', (data) => {
-        if(data.meeting_id) {
-            if(socket.rooms.has(data.meeting_id)) {
-                socket.to(data.meeting_id).emit('start_typing', socket.logged_rooms[data.meeting_id].user)
-            }
-            else
-                io.of('/error').emit('log', `${socket.id} START_TYPING socket has NOT joined this meeting! (refer to 'join')`)
+        let test = utilities.structure_test(data, ['meeting_id'])
+        if(test) return response.emit('response', {method: `start_typing`, status: 400, error: `Body for ${test} undefined!`})
+        if(socket.rooms.has(data.meeting_id)) {
+            socket.to(data.meeting_id).emit('start_typing', socket.logged_rooms[data.meeting_id].user)
+            return response.emit('response', {method: 'start_typing', status: 200})
         }
         else {
-            io.of('/error').emit('log', `${socket.id} START_TYPING 'meeting_id' not specified!`)
+            return response.emit('response', {method: 'start_typing', status: 401, error: 'User has not joined this meeting'})
         }
     })
     socket.on('end_typing', (data) => {
-        if(data.meeting_id) {
-            if(socket.rooms.has(data.meeting_id)) {
-                socket.to(data.meeting_id).emit('end_typing', socket.logged_rooms[data.meeting_id].user)
-            }
-            else
-                io.of('/error').emit('log', `${socket.id} END_TYPING socket has NOT joined this meeting! (refer to 'join')`)
+        let test = utilities.structure_test(data, ['meeting_id'])
+        if(test) return response.emit('response', {method: `end_typing`, status: 400, error: `Body for ${test} undefined!`})
+        if(socket.rooms.has(data.meeting_id)) {
+            socket.to(data.meeting_id).emit('end_typing', socket.logged_rooms[data.meeting_id].user)
+            return response.emit('response', {method: 'end_typing', status: 200})
         }
         else {
-            io.of('/error').emit('log', `${socket.id} END_TYPING 'meeting_id' not specified!`)
+            return response.emit('response', {method: 'end_typing', status: 401, error: 'User has not joined this meeting'})
         }
     })
     socket.on('leave', (data) => {
-        if(data.meeting_id) {
-            if(socket.rooms.has(data.meeting_id)) {
-                socket.logged_rooms[data.meeting_id] = undefined
-                socket.leave(data.meeting_id)
-                socket.to(data.meeting_id).emit('user_left', user)
-            }
-            else
-                io.of('/error').emit('log', `${socket.id} LEAVE account has not joined the meeting beforehand!`)
+        let test = utilities.structure_test(data, ['meeting_id'])
+        if(test) return response.emit('response', {method: `leave`, status: 400, error: `Body for ${test} undefined!`})
+        if(socket.rooms.has(data.meeting_id)) {
+            let user = socket.logged_rooms[data.meeting_id]
+            socket.logged_rooms[data.meeting_id] = undefined
+            socket.leave(data.meeting_id)
+            socket.to(data.meeting_id).emit('user_left', user)
         }
-        else {
-            io.of('/error').emit('log', `${socket.id} LEAVE 'meeting_id' not included!`)
-        }
+        else return response.emit('response', {method: 'leave', status: 401, error: 'User has not joined this meeting'})
+        return response.emit('response', {method: 'leave', status: 200})
     })
 })
 
